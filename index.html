@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>출동! 숲속 탐험대 준이와 함께하는 퀴즈</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: linear-gradient(135deg, #b9f0a5 0%, #fff9b0 50%, #ffd59e 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+  }
+  .app {
+    width: 100%;
+    max-width: 640px;
+    background: #ffffff;
+    border: 6px solid #ffd93d;
+    border-radius: 28px;
+    padding: 28px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    margin-top: 20px;
+  }
+  .header { text-align: center; margin-bottom: 18px; }
+  .header h1 {
+    font-size: 28px; color: #2e7d32;
+    text-shadow: 2px 2px 0 #fff59d;
+  }
+  .header .sub { font-size: 16px; color: #ff7043; margin-top: 6px; font-weight: 700; }
+  .progress-wrap {
+    background: #fff3cd; border-radius: 20px; height: 22px;
+    overflow: hidden; margin: 16px 0 8px; border: 2px solid #ffb300;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #66bb6a, #43a047);
+    transition: width 0.4s ease;
+  }
+  .progress-text { text-align: right; font-size: 14px; color: #616161; font-weight: 700; }
+
+  .scenario-box {
+    background: #e8f5e9;
+    border-left: 6px solid #66bb6a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 18px 0 14px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2e7d32;
+    white-space: pre-line;
+  }
+  .scenario-title { font-weight: 800; color: #1b5e20; margin-bottom: 6px; font-size: 17px; }
+
+  .question-card {
+    background: #fffde7;
+    border: 4px dashed #ffb300;
+    border-radius: 20px;
+    padding: 22px;
+    margin: 12px 0 22px;
+    text-align: center;
+  }
+  .emoji { font-size: 54px; margin-bottom: 8px; }
+  .question { font-size: 22px; font-weight: 800; color: #333; line-height: 1.5; }
+
+  .btn-group { display: flex; flex-direction: column; gap: 12px; }
+  .choice-btn {
+    font-size: 20px;
+    font-weight: 800;
+    padding: 18px 18px;
+    border-radius: 18px;
+    border: 4px solid;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    text-align: left;
+    line-height: 1.4;
+  }
+  .choice-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+  }
+  .choice-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+  .choice-1 { background: #fff; color: #e53935; border-color: #ff8a80; }
+  .choice-2 { background: #fff; color: #1e88e5; border-color: #90caf9; }
+
+  .yn-group { display: flex; gap: 14px; }
+  .yn-btn {
+    flex: 1;
+    font-size: 28px;
+    font-weight: 900;
+    padding: 22px 10px;
+    border-radius: 20px;
+    border: 5px solid;
+    cursor: pointer;
+    transition: transform 0.15s;
+    font-family: inherit;
+  }
+  .yn-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); }
+  .yn-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+  .yn-yes { background: #ffebee; color: #e53935; border-color: #ef5350; }
+  .yn-no  { background: #e3f2fd; color: #1e88e5; border-color: #42a5f5; }
+
+  .result {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 18px;
+    font-size: 18px;
+    line-height: 1.6;
+    animation: pop 0.35s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .result.correct { background: #e8f5e9; border: 4px solid #66bb6a; color: #2e7d32; }
+  .result.wrong   { background: #ffebee; border: 4px solid #ef5350; color: #c62828; }
+  .result .title { font-size: 22px; font-weight: 900; margin-bottom: 10px; }
+  .result .explain {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 2px dashed currentColor;
+    font-size: 17px; font-weight: 600; line-height: 1.6;
+  }
+
+  .next-btn {
+    width: 100%;
+    margin-top: 18px;
+    font-size: 22px;
+    font-weight: 900;
+    padding: 18px;
+    background: linear-gradient(135deg, #ffa726, #fb8c00);
+    color: #fff;
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 0 #e65100;
+  }
+  .next-btn:hover { transform: translateY(-2px); }
+  .next-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #e65100; }
+
+  /* 임명장 */
+  .certificate {
+    text-align: center;
+    padding: 18px 10px;
+  }
+  .cert-card {
+    border: 6px double #ff9800;
+    border-radius: 20px;
+    padding: 26px 18px;
+    background: linear-gradient(135deg, #fffde7, #fff3e0);
+    margin: 12px 0;
+  }
+  .cert-title { font-size: 28px; color: #e65100; font-weight: 900; margin-bottom: 8px; }
+  .cert-sub { font-size: 16px; color: #6d4c41; margin-bottom: 14px; }
+  .cert-name { font-size: 24px; color: #2e7d32; font-weight: 900; margin: 10px 0; }
+  .cert-score {
+    font-size: 48px; color: #d84315; font-weight: 900;
+    margin: 14px 0;
+    text-shadow: 3px 3px 0 #fff59d;
+  }
+  .cert-msg { font-size: 17px; color: #424242; line-height: 1.6; margin-top: 10px; }
+  .retry-btn {
+    margin-top: 18px;
+    font-size: 20px;
+    font-weight: 900;
+    padding: 14px 30px;
+    background: #43a047;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 0 #2e7d32;
+  }
+  .retry-btn:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+  // ============================================================
+  // 📝 퀴즈 데이터 (여기만 고치면 문제를 쉽게 바꿀 수 있어요!)
+  // ------------------------------------------------------------
+  //  - type: "yn"  → [예]/[아니오] 두 버튼. answer는 "예" 또는 "아니오"
+  //  - type: "mc"  → 선택지 버튼 2개. options 배열과 answer(정답 인덱스 0 또는 1)
+  //  - scenario   : (선택) 상황 설명 문장. 없어도 됨.
+  // ============================================================
+  const QUIZ_DATA = [
+    // ---- 동화 기반 예/아니오 문제 ----
+    {
+      type: "yn",
+      emoji: "🧥",
+      question: "밖에서 놀 때 긴팔과 긴바지를 입으면 병원체 괴물을 막을 수 있다.",
+      answer: "예",
+      explanation: "긴 옷은 우리 피부를 지켜주는 튼튼한 갑옷 역할을 해요!"
+    },
+    {
+      type: "yn",
+      emoji: "🧺",
+      question: "풀밭에 앉을 때 돗자리를 깔면 진드기를 피할 수 있다.",
+      answer: "예",
+      explanation: "돗자리는 우리와 병원체 사이를 갈라놓는 마법의 방패예요!"
+    },
+    {
+      type: "yn",
+      emoji: "👕",
+      question: "집으로 돌아오면 옷은 그냥 두고 내 몸만 씻으면 된다.",
+      answer: "아니오",
+      explanation: "옷에 묻어온 병원체가 있을 수 있으니 옷도 꼭 빨아야 해요!"
+    },
+
+    // ---- 사례형 선택지 문제 ----
+    {
+      type: "mc",
+      emoji: "🌿",
+      scenarioTitle: "사례 1: 풀밭에서 보물찾기",
+      scenario: "지수는 오늘 학교 뒤 풀밭에서 보물찾기를 했어요.\n반바지를 입고 풀숲을 헤치고 다녔더니 다리에 풀독이 오른 것처럼 간지러워요.",
+      question: "지수가 풀밭에 들어갈 때, 병원체가 몸에 닿지 않게 하려면 어떻게 입었어야 했을까요?",
+      options: [
+        "① 시원하게 짧은 바지와 나시를 입는다.",
+        "② 긴 바지와 긴 소매 옷을 입어 피부를 가린다."
+      ],
+      answer: 1,
+      explanation: "풀밭에는 진드기나 벌레가 숨어있을 수 있어요. 긴팔·긴바지로 피부를 가리면 병원체가 몸에 닿지 못해요!"
+    },
+    {
+      type: "mc",
+      emoji: "🦟",
+      scenarioTitle: "사례 2: 모기 가족의 습격",
+      scenario: "민우는 여름밤 가족들과 캠핑을 갔어요.\n반바지를 입고 앉아 있는데 모기들이 자꾸 민우 다리를 공격해요.",
+      question: "모기가 민우 몸에 구멍을 뚫고 병원체를 넣지 못하게 하려면 무엇을 사용하면 좋을까요?",
+      options: [
+        "① 모기가 오라고 맛있는 사탕을 둔다.",
+        "② 몸에 뿌리는 모기 기피제를 사용하거나 모기장을 친다."
+      ],
+      answer: 1,
+      explanation: "모기는 우리 몸에 병원체를 옮길 수 있어요. 모기 기피제나 모기장으로 모기가 가까이 오지 못하게 막아요!"
+    },
+    {
+      type: "mc",
+      emoji: "🩹",
+      scenarioTitle: "사례 3: 모래 사장의 상처",
+      scenario: "현아는 놀이터 모래장에서 친구들과 성 쌓기를 하다가\n손등을 긁혀서 피가 찔끔 났어요.",
+      question: "현아의 손등 상처로 흙 속의 병원체가 들어오지 못하게 하려면 가장 먼저 무엇을 해야 할까요?",
+      options: [
+        "① 깨끗한 물로 상처를 씻고 소독한 뒤 밴드를 붙인다.",
+        "② 상처에 모래를 더 덮어서 가린다."
+      ],
+      answer: 0,
+      explanation: "상처가 났을 때는 깨끗한 물로 씻고 소독한 다음 밴드를 붙여야 병원체가 몸속으로 들어올 수 없어요!"
+    },
+    {
+      type: "mc",
+      emoji: "💧",
+      scenarioTitle: "사례 4: 시원한 계곡물 한 모금",
+      scenario: "등산을 하던 정우는 너무 목이 말랐어요.\n마침 옆에 맑게 흐르는 계곡물이 보여서 손으로 물을 떠서 마시려고 해요.",
+      question: "정우가 계곡물을 마시면 괜찮을까요?",
+      options: [
+        "① 맑은 물이니까 안전해요.",
+        "② 산짐승들이 남기고 간 병원체가 살고 있어요."
+      ],
+      answer: 1,
+      explanation: "아무리 맑아 보여도 계곡물에는 눈에 안 보이는 병원체가 있을 수 있어요. 꼭 끓이거나 생수를 마셔야 해요!"
+    },
+    {
+      type: "mc",
+      emoji: "🐱",
+      scenarioTitle: "사례 5: 귀여운 길고양이와의 만남",
+      scenario: "학교 가는 길에 귀여운 길고양이가 나타났어요.\n태형이는 고양이가 너무 예뻐서 한참 동안 쓰다듬어 주었어요.\n그러고는 바로 손에 들고 있던 빵을 먹으려고 해요.",
+      question: "고양이의 털에 묻어있던 병원체가 태형이의 입속으로 들어가지 않게 하려면 어떻게 해야 할까요?",
+      options: [
+        "① 빵을 아주 빨리 먹어버린다.",
+        "② 빵을 먹기 전에 비누로 손을 깨끗이 씻는다."
+      ],
+      answer: 1,
+      explanation: "동물을 만진 손에는 병원체가 묻어있을 수 있어요. 음식을 먹기 전엔 꼭 비누로 손을 깨끗이 씻어요!"
+    }
+  ];
+
+  // ============================================================
+  // React App
+  // ============================================================
+  const { useState } = React;
+
+  function App() {
+    const [current, setCurrent] = useState(0);
+    const [score, setScore] = useState(0);
+    const [selected, setSelected] = useState(null); // 선택한 값
+    const [finished, setFinished] = useState(false);
+
+    const total = QUIZ_DATA.length;
+    const q = QUIZ_DATA[current];
+
+    const isCorrectAnswer = (choice) => {
+      if (q.type === "yn") return choice === q.answer;
+      return choice === q.answer;
+    };
+
+    const handleSelect = (choice) => {
+      if (selected !== null) return;
+      setSelected(choice);
+      if (isCorrectAnswer(choice)) setScore(s => s + 1);
+    };
+
+    const handleNext = () => {
+      setSelected(null);
+      if (current + 1 >= total) setFinished(true);
+      else setCurrent(c => c + 1);
+    };
+
+    const handleRetry = () => {
+      setCurrent(0); setScore(0); setSelected(null); setFinished(false);
+    };
+
+    // ---- 임명장 화면 ----
+    if (finished) {
+      const ratio = score / total;
+      let msg, medal;
+      if (ratio === 1)       { medal = "🏆"; msg = "우와! 완벽한 탐험대장이에요! 병원체 괴물들이 전부 도망갔어요!"; }
+      else if (ratio >= 0.7) { medal = "🥇"; msg = "멋진 탐험대장이에요! 조금만 더 연습하면 완벽해요!"; }
+      else if (ratio >= 0.4) { medal = "🥈"; msg = "좋아요! 이제 동화를 한 번 더 읽고 다시 도전해봐요!"; }
+      else                   { medal = "🥉"; msg = "괜찮아요! 준이의 이야기를 다시 읽고 도전해봐요!"; }
+
+      return (
+        <div className="app">
+          <div className="certificate">
+            <div style={{fontSize:"70px"}}>{medal}</div>
+            <div className="cert-card">
+              <div className="cert-title">🌟 멋진 탐험대장 임명장 🌟</div>
+              <div className="cert-sub">위 어린이는 숲속 탐험대의 규칙을 잘 익혀</div>
+              <div className="cert-name">✨ 탐험대장 ✨</div>
+              <div className="cert-sub">으로 임명되었음을 증명합니다.</div>
+              <div className="cert-score">{score} / {total}</div>
+              <div className="cert-msg">{msg}</div>
+            </div>
+            <button className="retry-btn" onClick={handleRetry}>🔄 다시 도전하기</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ---- 퀴즈 화면 ----
+    const correct = selected !== null && isCorrectAnswer(selected);
+    const correctText = q.type === "yn"
+        ? q.answer
+        : q.options[q.answer].replace(/^[①②③④⑤]\s*/, "");
+
+    return (
+      <div className="app">
+        <div className="header">
+          <h1>🌳 출동! 숲속 탐험대 🌳</h1>
+          <div className="sub">준이와 함께하는 감염병 예방 퀴즈</div>
+        </div>
+
+        <div className="progress-wrap">
+          <div className="progress-bar" style={{width: `${(current/total)*100}%`}} />
+        </div>
+        <div className="progress-text">{current + 1} / {total} 번째 문제</div>
+
+        {q.scenario && (
+          <div className="scenario-box">
+            {q.scenarioTitle && <div className="scenario-title">📖 {q.scenarioTitle}</div>}
+            {q.scenario}
+          </div>
+        )}
+
+        <div className="question-card">
+          <div className="emoji">{q.emoji}</div>
+          <div className="question">{q.question}</div>
+        </div>
+
+        {q.type === "yn" ? (
+          <div className="yn-group">
+            <button
+              className="yn-btn yn-yes"
+              onClick={() => handleSelect("예")}
+              disabled={selected !== null}
+            >⭕ 예</button>
+            <button
+              className="yn-btn yn-no"
+              onClick={() => handleSelect("아니오")}
+              disabled={selected !== null}
+            >❌ 아니오</button>
+          </div>
+        ) : (
+          <div className="btn-group">
+            {q.options.map((opt, idx) => (
+              <button
+                key={idx}
+                className={`choice-btn ${idx === 0 ? "choice-1" : "choice-2"}`}
+                onClick={() => handleSelect(idx)}
+                disabled={selected !== null}
+              >{opt}</button>
+            ))}
+          </div>
+        )}
+
+        {selected !== null && (
+          <>
+            <div className={`result ${correct ? "correct" : "wrong"}`}>
+              <div className="title">
+                {correct ? "🎉 정답이에요!" : `😅 아쉬워요! 정답은 "${correctText}"예요.`}
+              </div>
+              <div className="explain">💡 {q.explanation}</div>
+            </div>
+            <button className="next-btn" onClick={handleNext}>
+              {current + 1 >= total ? "🏅 결과 보기" : "➡️ 다음 문제로"}
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
